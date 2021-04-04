@@ -101,3 +101,43 @@ describe('test user API', () => {
   // })
 
 })
+describe('test geo API', () => {
+
+  it('POST geo should response 200 with Confirm location or update success', (done) => {
+    api.post('/api/geo')
+      .set('Accept', 'application/json')
+      .set('Authorization', authToken)
+      .send({ lat: 24.96, lng: 121.49 })
+      .expect(200)
+      .end((err, res) => {
+        if (err) done(err)
+        expect(res.body).to.have.key('msg')
+        // expect(res.body.msg).to.equal('Confirm location')
+        done()
+      })
+  })
+  it('POST geo should response 401 with Unauthorized', (done) => {
+    api.post('/api/geo')
+      .set('Accept', 'application/json')
+      .send({ lat: 24.96, lng: 121.49 })
+      .expect(401)
+      .end((err, res) => {
+        if (err) done(err)
+        expect(res.body).to.have.key('msg')
+        expect(res.body.msg).to.equal('Unauthorized')
+        done()
+      })
+  })
+  // it('POST geo should response 400 with Bad Request', (done) => {
+  //   api.post('/api/geo')
+  //     .set('Accept', 'application/json')
+  //     .set('Authorization', authToken)
+  //     .send({ wrong: 'wrong' })
+  //     .expect(400)
+  //     .end((err, res) => {
+  //       if (err) done(err)
+  //       expect(res.body).to.have.key('msg')
+  //       // done()
+  //     })
+  // })
+})
