@@ -6,6 +6,12 @@ const UserModel = require('./model/user')
 const GeoModel = require('./model/geo')
 const GeoRecordModel = require('./model/geoRecord')
 const GeoAction = require('./actions/geo')
+const errorMiddleware = require('./error/errorMiddleware');
+const {
+  BadRequest,
+  NotFound,
+  Conflict,
+  Unauthorized } = require('./error/errors');
 
 const handleError = require('./error/errorHandle')
 const utils = require('./util/util')
@@ -19,46 +25,35 @@ app.use(bodyParser.json())
 app.use(express.urlencoded())
 app.set('secret', process.env.SECRET)
 
-
-app.post('/api/create_user', (req, res) => {
+app.post('/api/user', (req, res, next) => {
   UserModel.find({ username: req.body.username, email: req.body.email })
     .then(async data => {
       if (data.length !== 0) {
-        console.log('user exist')
-        return res.status(409).json({ msg: 'user exist' })
+        next(new Conflict('user exist'))
       } else {
         const userBody = await utils.handleUserPassword(req.body)
-        UserModel.create(userBody, (err, ent) => {
-          if (err) return res.status(401).json({ msg: handleError(err) })
-          return res.status(200).json({ msg: 'ok' })
-        })
+        UserModel.create(userBody)
+          .then(() => res.status(200).json({ msg: 'ok' }))
+          .catch(err => next(new BadRequest(handleError(err))))
       }
     }).catch(err => {
-      console.log(err)
-      return res.status(500).json({ msg: 'Server Error' })
+      next(err)
     })
 })
 
-app.post('/api/login', (req, res) => {
+app.post('/api/login', (req, res, next) => {
   UserModel.find({ username: req.body.username })
     .then(data => {
-      if (data.length === 0) {
-        console.log('login failed')
-        return res.status(401).json({ msg: 'login failed' })
+      if (data && utils.passwordHash(req.body.password, data[0].salt) === data[0].password) {
+        return res.status(200).json({
+          msg: 'Login success',
+          token: jwt.sign(data[0].toJSON(), app.get('secret'))
+        })
       } else {
-        if (utils.passwordHash(req.body.password, data[0].salt) === data[0].password) {
-          return res.status(200).json({
-            msg: 'Login success',
-            token: jwt.sign(data[0].toJSON(), app.get('secret'))
-          })
-        } else {
-          console.log('login failed')
-          return res.status(401).json({ msg: 'login failed' })
-        }
+        next(new Unauthorized('login failed'))
       }
     }).catch(err => {
-      console.log(err)
-      return res.status(500).json({ msg: 'Server Error' })
+      next(err)
     })
 })
 
@@ -70,73 +65,53 @@ appAuth.use(function (req, res, next) {
   if (token) {
     jwt.verify(token, app.get('secret'), (err, decoded) => {
       if (err) {
-        return res.json({ msg: 'Failed to authenticate token.' })
+        next(new BadRequest('Failed to authenticate token.'))
       } else {
         req.decoded = decoded
         next()
       }
     })
   } else {
-    return res.status(401).json({ msg: 'Unauthorized' })
+    next(new Unauthorized('Unauthorized'))
   }
 })
 
-// appAuth.post('/api/logout', (req, res) => {
-//   UserModel.find(utils.handleUserPassword(req.body))
-//     .then(data => {
-//       if (data.length === 0) {
-//         console.log('login failed')
-//         return res.status(401).json({ msg: 'logout failed' })
-//       } else {
-//         return res.status(200).json({msg: 'Logout success'})
-//       }
-//     }).catch(err => {
-//       console.log(err)
-//       return res.status(500).json({ msg: 'Server Error' })
-//     })
-// })
-
-appAuth.post('/api/geo', (req, res) => {
+appAuth.post('/api/geo', async (req, res, next) => {
   console.log('POST geo')
   GeoModel.findOne({ username: req.decoded.username }, (err, data) => {
-    if (err || (!req.body.lat || !req.body.lng)) return res.status(400).json({ msg: 'Bad Request' })
+    if (err) next(new BadRequest('Bad Request'))
     else if (!data) {
       const geoBody = {
         username: req.decoded.username,
         update: Date.now(),
         ...req.body
       }
-      GeoModel.create(geoBody, (err, ent) => {
-        if (err) return res.status(400).json({ msg: handleError(err) })
-        return res.status(200).json({ msg: "Confirm location" })
-      })
+      GeoModel.create(geoBody)
+        .then(() => res.status(200).json({ msg: "Confirm location" }))
+        .catch(err => next(new BadRequest(handleError(err))))
     } else {
-      GeoAction.updateGeo(res, data.username, req.body.lat, req.body.lng)
+      GeoAction.updateGeo(res, data.username, req.body).catch(next)
     }
-  }).catch(err => {
-    console.log(err)
-    return res.status(500).json({ msg: 'Server Error' })
-  })
+  }).catch(next)
 })
 
-appAuth.put('/api/geo', (req, res) => {
+appAuth.put('/api/geo', (req, res, next) => {
   console.log('PUT geo')
   GeoModel.aggregate([
     { $match: { username: req.decoded.username } },
     { $project: { _id: false, __v: false } }])
     .then(data => {
-      if (!data) return res.status(400).json({ msg: 'Bad Request' })
-      GeoRecordModel.create(data[0])
-        .then(() => {
-          GeoAction.updateGeo(res, data[0].username, req.body.lat, req.body.lng)
-        })
-    }).catch(err => {
-      return res.status(500).json({ msg: 'Server Error' })
-    })
+      if (data.length === 0) next(new BadRequest('Bad Request'))
+      else {
+        GeoRecordModel.create(data[0])
+        GeoAction.updateGeo(res, data[0].username, req.body).catch(next)
+      }
+    }).catch(next)
 })
 
 app.use('', appAuth)
+app.use(errorMiddleware)
 
 app.listen(port, () => {
-  console.log("info", 'Server is running at port : ' + port);
-});
+  console.log("info", 'Server is running at port : ' + port)
+})

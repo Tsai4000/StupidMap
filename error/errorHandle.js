@@ -1,7 +1,7 @@
 const mongoose = require('mongoose')
 
 const handleError = (err) => {
-  var errmsg = ""
+  var errmsg = "Error"
   for (var errName in err.errors) {
     switch (err.errors[errName].type) {
       case mongoose.Error.ValidationError.REQUIRED:
