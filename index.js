@@ -1,22 +1,25 @@
 const express = require('express')
 const jwt = require('jsonwebtoken')
 const bodyParser = require('body-parser')
-
+const http = require('http')
+const socket = require('socket.io')
 const UserModel = require('./model/user')
 const GeoModel = require('./model/geo')
 const GeoRecordModel = require('./model/geoRecord')
 const GeoAction = require('./actions/geo')
-const errorMiddleware = require('./error/errorMiddleware');
+const errorMiddleware = require('./error/errorMiddleware')
 const {
   BadRequest,
   NotFound,
   Conflict,
-  Unauthorized } = require('./error/errors');
-
+  Unauthorized
+} = require('./error/errors')
 const handleError = require('./error/errorHandle')
 const utils = require('./util/util')
 
 const app = express()
+const server = http.createServer(app)
+const io = socket(server)
 
 const port = 5000
 require('dotenv').config()
@@ -36,9 +39,7 @@ app.post('/api/user', (req, res, next) => {
           .then(() => res.status(200).json({ msg: 'ok' }))
           .catch(err => next(new BadRequest(handleError(err))))
       }
-    }).catch(err => {
-      next(err)
-    })
+    }).catch(next)
 })
 
 app.post('/api/login', (req, res, next) => {
@@ -52,9 +53,7 @@ app.post('/api/login', (req, res, next) => {
       } else {
         next(new Unauthorized('login failed'))
       }
-    }).catch(err => {
-      next(err)
-    })
+    }).catch(next)
 })
 
 const appAuth = express.Router()
@@ -112,6 +111,13 @@ appAuth.put('/api/geo', (req, res, next) => {
 app.use('', appAuth)
 app.use(errorMiddleware)
 
-app.listen(port, () => {
-  console.log("info", 'Server is running at port : ' + port)
+const onConnection = (socket) => {
+  console.log('Socket.io init success')
+}
+
+io.on("connection", onConnection)
+
+
+server.listen(port, () => {
+  console.log('Server is running at port : ' + port)
 })

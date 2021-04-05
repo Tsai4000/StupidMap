@@ -12,7 +12,7 @@ const testUser = {
 describe('test user API', () => {
 
 
-  it('POST user should response 200 with msg ok', (done) => {
+  it('POST user should response 200 with msg ok', done => {
     api.post('/api/user')
       .set('Accept', 'application/json')
       .send({ email: 'testEmail@gmail.com', ...testUser })
@@ -24,7 +24,7 @@ describe('test user API', () => {
         done()
       })
   })
-  it('POST user should response 400 with BadRequest', (done) => {
+  it('POST user should response 400 with BadRequest', done => {
     api.post('/api/user')
       .set('Accept', 'application/json')
       .send(testUser)
@@ -38,7 +38,7 @@ describe('test user API', () => {
         done()
       })
   })
-  it('POST user should response 409 with user exist', (done) => {
+  it('POST user should response 409 with user exist', done => {
     api.post('/api/user')
       .set('Accept', 'application/json')
       .send({ email: 'testEmail@gmail.com', ...testUser })
@@ -52,7 +52,7 @@ describe('test user API', () => {
         done()
       })
   })
-  it('POST login should response 200 with token', (done) => {
+  it('POST login should response 200 with token', done => {
     api.post('/api/login')
       .set('Accept', 'application/json')
       .send(testUser)
@@ -64,7 +64,7 @@ describe('test user API', () => {
         done()
       })
   })
-  it('POST login should response 401 with login failed', (done) => {
+  it('POST login should response 401 with login failed', done => {
     api.post('/api/login')
       .set('Accept', 'application/json')
       .send({ username: 'testUser', password: 'wrongpw' })
@@ -84,7 +84,7 @@ describe('test user API', () => {
 
 })
 describe('test geo API', () => {
-  it('POST geo should response 400 with Bad Request', (done) => {
+  it('POST geo should response 400 with Bad Request', done => {
     api.post('/api/geo')
       .set('Accept', 'application/json')
       .set('Authorization', authToken)
@@ -99,7 +99,7 @@ describe('test geo API', () => {
         done()
       })
   })
-  it('PUT geo should response 400 with Bad Request', (done) => {
+  it('PUT geo should response 400 with Bad Request', done => {
     api.put('/api/geo')
       .set('Accept', 'application/json')
       .set('Authorization', authToken)
@@ -114,7 +114,7 @@ describe('test geo API', () => {
         done()
       })
   })
-  it('POST geo should response 200 with Confirm location or update success', (done) => {
+  it('POST geo should response 200 with Confirm location or update success', done => {
     api.post('/api/geo')
       .set('Accept', 'application/json')
       .set('Authorization', authToken)
@@ -127,7 +127,7 @@ describe('test geo API', () => {
         done()
       })
   })
-  it('POST geo should response 401 with Unauthorized', (done) => {
+  it('POST geo should response 401 with Unauthorized', done => {
     api.post('/api/geo')
       .set('Accept', 'application/json')
       .send({ lat: 24.96, lng: 121.49 })
@@ -141,7 +141,7 @@ describe('test geo API', () => {
         done()
       })
   })
-  it('PUT geo should response 200 with Confirm location or update success', (done) => {
+  it('PUT geo should response 200 with Confirm location or update success', done => {
     api.put('/api/geo')
       .set('Accept', 'application/json')
       .set('Authorization', authToken)
@@ -153,5 +153,17 @@ describe('test geo API', () => {
         // expect(res.body.msg).to.equal('Confirm location')
         done()
       })
+  })
+})
+
+const io = require('socket.io-client')
+describe('Test soclet server', () => {
+  it('connection', done => {
+    const client = io('http://localhost:5000')
+
+    client.on('connect', () => {
+      client.close()
+      done()
+    })
   })
 })
