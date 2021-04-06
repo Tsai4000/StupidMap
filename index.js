@@ -57,19 +57,10 @@ app.post('/api/login', (req, res, next) => {
 })
 
 
-const socketAction = require('./socket/socketAction')
+const registerTestHandler = require('./register/testHandler')
 
 const onConnection = (socket) => {
-  console.log('Socket.io init success', socket.id)
-  const onTest = (data) => {
-    socket.emit('test', { msg: data })
-  }
-  const onTestBroadcast = (data) => {
-    socket.broadcast.emit('test', { msg: data })
-  }
-  socket.on('test', onTest)
-  socket.on('testBroadcast', onTestBroadcast)
-
+  registerTestHandler(io, socket)
 }
 
 io.on("connection", onConnection)
