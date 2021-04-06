@@ -56,6 +56,24 @@ app.post('/api/login', (req, res, next) => {
     }).catch(next)
 })
 
+
+const socketAction = require('./socket/socketAction')
+
+const onConnection = (socket) => {
+  console.log('Socket.io init success', socket.id)
+  const onTest = (data) => {
+    socket.emit('test', { msg: data })
+  }
+  const onTestBroadcast = (data) => {
+    socket.broadcast.emit('test', { msg: data })
+  }
+  socket.on('test', onTest)
+  socket.on('testBroadcast', onTestBroadcast)
+
+}
+
+io.on("connection", onConnection)
+
 const appAuth = express.Router()
 
 appAuth.use(function (req, res, next) {
@@ -110,13 +128,6 @@ appAuth.put('/api/geo', (req, res, next) => {
 
 app.use('', appAuth)
 app.use(errorMiddleware)
-
-const onConnection = (socket) => {
-  console.log('Socket.io init success')
-}
-
-io.on("connection", onConnection)
-
 
 server.listen(port, () => {
   console.log('Server is running at port : ' + port)

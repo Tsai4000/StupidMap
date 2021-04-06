@@ -157,13 +157,54 @@ describe('test geo API', () => {
 })
 
 const io = require('socket.io-client')
-describe('Test soclet server', () => {
-  it('connection', done => {
-    const client = io('http://localhost:5000')
+describe('Test socket server', () => {
+  let client
+  let client2
+  beforeEach(() => {
+    client = io('http://localhost:5000')
+    client2 = io('http://localhost:5000')
+  })
 
-    client.on('connect', () => {
-      client.close()
+  afterEach(() => {
+    client.close()
+    client2.close()
+  })
+  // it('connection', done => {
+  //   const client = io('http://localhost:5000')
+  //   client.on('connect', () => {
+  //     client.close()
+  //     done()
+  //   })
+  // })
+  // it('disconnection', done => {
+  //   const client = io('http://localhost:5000')
+  //   client.on('connect', () => {
+  //     client.close()
+  //   })
+  //   client.on('disconnect', () => {
+  //     done()
+  //   })
+  // })
+  it('test client emit', done => {
+    const testmsg = Math.random().toString()
+    client.on('test', (data) => {
+      expect(data).to.have.key('msg')
+      expect(data.msg).to.equal(testmsg)
       done()
     })
+    client.emit('test', testmsg)
+  })
+  it('test serverside emit', done => {
+    const testmsg = Math.random().toString()
+    client.on('test', (data) => {
+      expect(data).to.have.key('msg')
+      expect(data.msg).to.equal(testmsg)
+      done()
+    })
+    client2.on('test', (data) => {
+      const err = 'should not recieve msg'
+      done(err)
+    })
+    client2.emit('testBroadcast', testmsg)
   })
 })
