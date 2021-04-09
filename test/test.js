@@ -161,8 +161,12 @@ describe('Test socket server', () => {
   let client
   let client2
   beforeEach(() => {
-    client = io('http://localhost:5000')
-    client2 = io('http://localhost:5000')
+    client = io('http://localhost:5000', {
+      query: { token: authToken }
+    })
+    client2 = io('http://localhost:5000', {
+      query: { token: authToken }
+    })
   })
 
   afterEach(() => {

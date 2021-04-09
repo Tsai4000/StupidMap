@@ -48,7 +48,7 @@ app.post('/api/login', (req, res, next) => {
       if (data && utils.passwordHash(req.body.password, data[0].salt) === data[0].password) {
         return res.status(200).json({
           msg: 'Login success',
-          token: jwt.sign(data[0].toJSON(), app.get('secret'))
+          token: jwt.sign(utils.handleUserBodyNoPW(data[0]), app.get('secret'))
         })
       } else {
         next(new Unauthorized('login failed'))
@@ -63,11 +63,21 @@ const onConnection = (socket) => {
   registerTestHandler(io, socket)
 }
 
-io.on("connection", onConnection)
+io.use((socket, next) => {
+  if (socket.handshake.query && socket.handshake.query.token) {
+    jwt.verify(socket.handshake.query.token, app.get('secret'), (err, decoded) => {
+      if (err) return next(new Unauthorized('Authentication error'))
+      socket.decoded = decoded
+      next()
+    })
+  } else {
+    next(new Error('Authentication error'))
+  }
+}).on("connection", onConnection)
 
 const appAuth = express.Router()
 
-appAuth.use(function (req, res, next) {
+appAuth.use((req, res, next) => {
   console.log('check auth')
   const token = req.body.token || req.query.token || (req.headers['authorization'] && req.headers['authorization'].replace('Bearer ', ''))
   if (token) {

@@ -14,3 +14,11 @@ exports.handleUserPassword = async (user) => {
   }
   return newUser
 }
+
+exports.handleUserBodyNoPW = (userBody) => {
+  const newUser = userBody.toObject()
+  Object.keys(newUser).map((key) => {
+    if (!(key === 'username' || key === 'email' || key === '_id')) delete newUser[key]
+  })
+  return newUser
+}
