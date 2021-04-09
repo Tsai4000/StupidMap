@@ -160,7 +160,7 @@ const io = require('socket.io-client')
 describe('Test socket server', () => {
   let client
   let client2
-  beforeEach(() => {
+  beforeEach(async () => {
     client = io('http://localhost:5000', {
       query: { token: authToken }
     })
@@ -210,5 +210,47 @@ describe('Test socket server', () => {
       done(err)
     })
     client2.emit('testBroadcast', testmsg)
+  })
+  it('test join room', done => {
+    setTimeout(() => {
+      io('http://localhost:5000', {
+        query: { token: authToken }
+      })
+    }, 200)//client3 join room
+    client2.on('message', (data) => {
+      console.log(data.msg)
+      expect(data).to.have.key('msg')
+      done()
+    })
+  })
+  it('test room message', done => {
+    const testMsg = 'test'
+    setTimeout(() => {
+      client.emit('roomMessage', testMsg)
+    }, 200)//client3 join room
+    client2.on('message', (data) => {
+      console.log(data)
+      expect(data).to.have.key('msg')
+      expect(data.msg).to.equal(testMsg)
+      expect(data).to.have.key('room')
+      expect(data.room).to.equal('testRoom')
+      expect(data).to.have.key('from')
+      expect(data.from).to.equal(client.id)
+      done()
+    })
+  })
+  it('test all message', done => {
+    const testMsg = 'test'
+    setTimeout(() => {
+      client.emit('roomMessage', testMsg)
+    }, 200)//client3 join room
+    client2.on('message', (data) => {
+      console.log(data)
+      expect(data).to.have.key('msg')
+      expect(data.msg).to.equal(testMsg)
+      expect(data).to.have.key('from')
+      expect(data.from).to.equal(client.id)
+      done()
+    })
   })
 })

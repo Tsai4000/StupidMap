@@ -45,7 +45,7 @@ app.post('/api/user', (req, res, next) => {
 app.post('/api/login', (req, res, next) => {
   UserModel.find({ username: req.body.username })
     .then(data => {
-      if (data && utils.passwordHash(req.body.password, data[0].salt) === data[0].password) {
+      if (data.length && utils.passwordHash(req.body.password, data[0].salt) === data[0].password) {
         return res.status(200).json({
           msg: 'Login success',
           token: jwt.sign(utils.handleUserBodyNoPW(data[0]), app.get('secret'))
@@ -58,9 +58,22 @@ app.post('/api/login', (req, res, next) => {
 
 
 const registerTestHandler = require('./register/testHandler')
+const registerRoomChat = require('./register/roomChat')
+const joinGeoRoom = (socket) => {
+  GeoModel.findOne({ username: socket.decoded.username })
+    .then(async data => {
+      if (data) {
+        socket.geoRoom = 'testRoom'
+        socket.join(socket.geoRoom)
+        socket.broadcast.in(socket.geoRoom).emit('message', { msg: `${socket.id} join room` })
+      }
+    })
+}
 
 const onConnection = (socket) => {
   registerTestHandler(io, socket)
+  joinGeoRoom(socket)
+  registerRoomChat(io, socket)
 }
 
 io.use((socket, next) => {
