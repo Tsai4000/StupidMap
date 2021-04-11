@@ -253,4 +253,18 @@ describe('Test socket server', () => {
       done()
     })
   })
+  it('test direct message', done => {
+    const testMsg = 'test'
+    setTimeout(() => {
+      client.emit('directMessage', { targetId: client2.id, message: testMsg })
+    }, 200)//client3 join room
+    client2.on('message', (data) => {
+      console.log(data)
+      expect(data).to.have.key('msg')
+      expect(data.msg).to.equal(testMsg)
+      expect(data).to.have.key('from')
+      expect(data.from).to.equal(client.id)
+      done()
+    })
+  })
 })

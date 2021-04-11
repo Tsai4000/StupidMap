@@ -59,6 +59,7 @@ app.post('/api/login', (req, res, next) => {
 
 const registerTestHandler = require('./register/testHandler')
 const registerRoomChat = require('./register/roomChat')
+const registerDirectMessage = require('./register/directMessage')
 const joinGeoRoom = (socket) => {
   GeoModel.findOne({ username: socket.decoded.username })
     .then(async data => {
@@ -71,9 +72,10 @@ const joinGeoRoom = (socket) => {
 }
 
 const onConnection = (socket) => {
-  registerTestHandler(io, socket)
   joinGeoRoom(socket)
+  registerTestHandler(io, socket)
   registerRoomChat(io, socket)
+  registerDirectMessage(io, socket)
 }
 
 io.use((socket, next) => {
