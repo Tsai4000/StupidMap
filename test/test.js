@@ -267,4 +267,16 @@ describe('Test socket server', () => {
       done()
     })
   })
+  // it('test emit error', done => {
+  //   const testmsg = Math.random().toString()
+  //   // const clientErr = io('http://localhost:5000', {
+  //   //   query: { token: 'wrong' }
+  //   // })
+  //   client.on('error', (data) => {
+  //     expect(data).to.have.key('msg')
+  //     expect(data.msg).to.equal('test')
+  //     done()
+  //   })
+  //   client.emit('test', testmsg)
+  // })
 })

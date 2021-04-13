@@ -5,7 +5,8 @@ module.exports = (io, socket) => {
     MessageModel.create({
       message: data.message,
       from: socket.id,
-      to: data.targetId
+      to: data.targetId,
+      time: Date.now()
     })
     io.to(data.targetId).emit('message', { msg: data.message, from: socket.id })
   }

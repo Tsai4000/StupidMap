@@ -5,7 +5,8 @@ module.exports = (io, socket) => {
     MessageModel.create({
       message: data,
       from: socket.id,
-      room: socket.geoRoom
+      room: socket.geoRoom,
+      time: Date.now()
     })
     socket.broadcast.in(socket.geoRoom).emit('message', { msg: data, room: socket.geoRoom, from: socket.id })
   }
@@ -13,7 +14,8 @@ module.exports = (io, socket) => {
     MessageModel.create({
       message: data,
       from: socket.id,
-      room: "all"
+      room: "all",
+      time: Date.now()
     })
     socket.broadcast.emit('message', { msg: data, from: socket.id })
   }
