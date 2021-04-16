@@ -1,4 +1,5 @@
 const bcrypt = require('bcryptjs')
+const { BadRequest } = require('../error/errors')
 
 exports.passwordHash = (password, salt) => {
   return bcrypt.hashSync(password, salt)
@@ -21,4 +22,18 @@ exports.handleUserBodyNoPW = (userBody) => {
     if (!(key === 'username' || key === 'email' || key === '_id')) delete newUser[key]
   })
   return newUser
+}
+
+exports.handleGeoCodeApiPath = (lat, lng, apiKey) => {
+  return `https://maps.googleapis.com/maps/api/geocode/json?latlng=${lat},${lng}&language=zh-TW&key=${apiKey}`
+}
+
+exports.handleGeoCodeLocation = (geoCodeBody) => {
+  if (geoCodeBody.results.length !== 0 && geoCodeBody.results[0].address_components) {
+    const district = geoCodeBody.results[0].address_components.find(comp => {
+      return comp.types.includes("administrative_area_level_3")
+    })
+    return district.long_name
+  }
+  return new BadRequest('no location')
 }

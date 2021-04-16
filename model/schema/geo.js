@@ -4,6 +4,7 @@ const GeoSchema = new mongoose.Schema({
   username: { type: String, required: true, unique: true },
   lat: { type: Number, required: true },
   lng: { type: Number, required: true },
+  districtRoom: { type: String, required: true },
   update: { type: Number, required: true }
 })
 

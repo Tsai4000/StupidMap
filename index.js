@@ -1,4 +1,5 @@
 const express = require('express')
+const fetch = require('node-fetch')
 const jwt = require('jsonwebtoken')
 const bodyParser = require('body-parser')
 const http = require('http')
@@ -64,6 +65,7 @@ const joinGeoRoom = (socket) => {
   GeoModel.findOne({ username: socket.decoded.username })
     .then(async data => {
       if (data) {
+
         socket.geoRoom = 'testRoom'
         socket.join(socket.geoRoom)
         socket.broadcast.in(socket.geoRoom).emit('message', { msg: `${socket.id} join room` })
@@ -109,23 +111,29 @@ appAuth.use((req, res, next) => {
   }
 })
 
-appAuth.post('/api/geo', async (req, res, next) => {
+appAuth.post('/api/geo', (req, res, next) => {
   console.log('POST geo')
-  GeoModel.findOne({ username: req.decoded.username }, (err, data) => {
-    if (err) next(new BadRequest('Bad Request'))
-    else if (!data) {
-      const geoBody = {
-        username: req.decoded.username,
-        update: Date.now(),
-        ...req.body
+  GeoModel.aggregate([
+    { $match: { username: req.decoded.username } },
+    { $project: { _id: false, __v: false } }])
+    .then(async data => {
+      if (data.length === 0) {
+        const geoResult = await fetch(utils.handleGeoCodeApiPath(req.body.lat, req.body.lng, process.env.GOOGLE_API_KEY)).then(geoCode => geoCode.json())
+        const geoBody = {
+          username: req.decoded.username,
+          update: Date.now(),
+          districtRoom: utils.handleGeoCodeLocation(geoResult),
+          ...req.body
+        }
+        GeoModel.create(geoBody)
+          .then(() => res.status(200).json({ msg: "Confirm location" }))
+          .catch(err => next(new BadRequest(handleError(err))))
+      } else {
+        GeoRecordModel.create(data[0])
+        GeoAction.updateGeo(res, data[0].username, req.body).catch(next)
       }
-      GeoModel.create(geoBody)
-        .then(() => res.status(200).json({ msg: "Confirm location" }))
-        .catch(err => next(new BadRequest(handleError(err))))
-    } else {
-      GeoAction.updateGeo(res, data.username, req.body).catch(next)
-    }
-  }).catch(next)
+    }).catch(next)
+
 })
 
 appAuth.put('/api/geo', (req, res, next) => {
