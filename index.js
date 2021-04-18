@@ -150,6 +150,7 @@ appAuth.put('/api/geo', (req, res, next) => {
     }).catch(next)
 })
 
+
 app.use('', appAuth)
 app.use(errorMiddleware)
 

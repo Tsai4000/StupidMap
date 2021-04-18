@@ -20,3 +20,9 @@ exports.updateGeo = async (res, username, updateGeoBody) => {
     return res.status(200).json({ msg: 'update success' })
   })
 }
+
+exports.deleteGeoPhysically = (reqbody) => {
+  GeoModel.deleteOne(reqbody, (err) => {
+    if (err) return handleError(err)
+  })
+}

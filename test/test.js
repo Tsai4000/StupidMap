@@ -2,6 +2,7 @@ const supertest = require('supertest')
 const api = supertest('http://localhost:5000')
 const expect = require('expect.js')
 const UserAction = require('../actions/user')
+const GeoAction = require('../actions/geo')
 let authToken
 
 const testUser = {
@@ -10,8 +11,6 @@ const testUser = {
 }
 
 describe('test user API', () => {
-
-
   it('POST user should response 200 with msg ok', done => {
     api.post('/api/user')
       .set('Accept', 'application/json')
@@ -78,11 +77,8 @@ describe('test user API', () => {
         done()
       })
   })
-  // after(() => {
-  //   UserAction.deleteUserPhysically({ email: 'testEmail@gmail.com', ...testUser })
-  // })
-
 })
+
 describe('test geo API', () => {
   it('POST geo should response 400 with Bad Request', done => {
     api.post('/api/geo')
@@ -279,4 +275,15 @@ describe('Test socket server', () => {
   //   })
   //   client.emit('test', testmsg)
   // })
+})
+
+describe('Delete test data', () => {
+  before(() => {
+    GeoAction.deleteGeoPhysically({ username: 'testUser' })
+  })
+  it('Deleted', (done) => {
+    // search test data should fail
+    done()
+  })
+
 })
