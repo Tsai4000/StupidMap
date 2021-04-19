@@ -280,10 +280,10 @@ describe('Test socket server', () => {
 describe('Delete test data', () => {
   before(() => {
     GeoAction.deleteGeoPhysically({ username: 'testUser' })
+    UserAction.deleteUserPhysically(testUser)
   })
   it('Deleted', (done) => {
     // search test data should fail
     done()
   })
-
 })
