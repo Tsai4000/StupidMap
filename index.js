@@ -7,8 +7,8 @@ const socket = require('socket.io')
 const UserModel = require('./model/user')
 const GeoModel = require('./model/geo')
 const GeoRecordModel = require('./model/geoRecord')
-const PostdModel = require('./model/geoRecord')
-const ReplyModel = require('./model/geoRecord')
+const PostdModel = require('./model/post')
+const ReplyModel = require('./model/reply')
 const GeoAction = require('./actions/geo')
 const errorMiddleware = require('./error/errorMiddleware')
 const {
@@ -154,17 +154,18 @@ appAuth.put('/api/geo', (req, res, next) => {
 })
 
 appAuth.post('/api/post', (req, res, next) => {
-  console.log('POST a post')
-  PostdModel.create({ author: req.deocded.username, ...req.body })
-    .then(() => res.status(200).json({ msg: "Post createdt" }))
+  console.log(`POST a post`)
+  PostdModel.create({ author: req.decoded.username, ...req.body })
+    .then(() => res.status(200).json({ msg: "Post created" }))
     .catch(err => next(new BadRequest(handleError(err))))
 })
 
 appAuth.post('/api/reply', async (req, res, next) => {
   try {
     console.log('POST a reply')
+    if (!req.body.belong) throw (new BadRequest('Bad Request'))
     const { nowFloor } = await PostModel.findByIdAndUpdate(req.body.belong, { $inc: { nowFloor: 1 } })
-    ReplyModel.create({ author: req.deocded.username, floor: nowFloor + 1, ...req.body })
+    ReplyModel.create({ author: req.decoded.username, floor: nowFloor + 1, ...req.body })
       .then(() => res.status(200).json({ msg: "Reply created" }))
       .catch(err => next(new BadRequest(handleError(err))))
   } catch (err) { next(err) }
@@ -175,8 +176,8 @@ appAuth.get('/api/posts', (req, res, next) => {
   const sortKey = req.query.sort === "created_at" ? { "created_at": 1 } : { "updated_at": 1 }
   PostModel.aggregate([
     { $sort: sortKey },
-    { $project: { _id: 1, author: 1, name: 1 } },
-    { $limit: req.query.amount || 10 }])
+    { $project: { _id: 1, author: 1, title: 1 } },
+    { $limit: Number(req.query.amount) || 10 }])
     .then((data) => res.status(200).json({ posts: data }))
     .catch(err => next(new BadRequest(handleError(err))))
 })
@@ -184,17 +185,16 @@ appAuth.get('/api/posts', (req, res, next) => {
 appAuth.get('/api/post/:id', (req, res, next) => {
   console.log(`GET a post`)
   ReplyModel.aggregate([
-    { $match: { belong: req.parameter.id } },
+    { $match: { belong: req.params.id } },
     { $sort: { floor: 1 } },
     { $project: { _id: 0, belong: 0 } },
     { $limit: 10 }])
     .then(replies => {
-      PostModel.findOne({ _id: req.parameter.id })
+      PostModel.findOne({ _id: req.params.id })
         .then(op => res.status(200).json({ originalPost: op, replies }))
         .catch(err => next(new BadRequest(handleError(err))))
     })
     .catch(err => next(new BadRequest(handleError(err))))
-
 })
 
 app.use('', appAuth)

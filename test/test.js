@@ -152,6 +152,123 @@ describe('test geo API', () => {
   })
 })
 
+const testPost = {
+  title: 'testTitle',
+  content: 'testContent',
+  category: 'testCatetory',
+}
+
+let postID
+
+describe('Test post and reply api', () => {
+  it('POST post api should return 200', (done) => {
+    api.post('/api/post')
+      .set('Accept', 'application/json')
+      .set('Authorization', authToken)
+      .send(testPost)
+      .expect(200)
+      .end((err, res) => {
+        if (err) done(err)
+        expect(res.body).to.have.key('msg')
+        expect(res.body.msg).to.equal('Post created')
+        done()
+      })
+  })
+  it('POST post api should return 400 without title', (done) => {
+    api.post('/api/post')
+      .set('Accept', 'application/json')
+      .set('Authorization', authToken)
+      .send({ wrong: 'wrong' })
+      .expect(400)
+      .end((err, res) => {
+        if (err) done(err)
+        expect(res.body).to.have.key('status')
+        expect(res.body.status).to.equal('error')
+        expect(res.body).to.have.key('message')
+        expect(res.body.message).to.equal('Field title is required')
+        done()
+      })
+  })
+  it('GET posts api should return 200', (done) => {
+    const amount = 10
+    const sortby = 'created_at'
+    api.get(`/api/posts?sort=${sortby}&amount=${amount}`)
+      .set('Accept', 'application/json')
+      .set('Authorization', authToken)
+      .send()
+      .expect(200)
+      .end((err, res) => {
+        if (err) done(err)
+        expect(res.body).to.have.key('posts')
+        expect(res.body.posts.length).to.not.greaterThan(amount)
+        expect(res.body.posts[0]).to.have.keys(['_id', 'author', 'title'])
+        postID = res.body.posts[0]._id
+        done()
+      })
+  })
+  it('GET posts api should return 200', (done) => {
+    const amount = 10
+    const sortby = 'created_at'
+    api.get(`/api/posts?sort=${sortby}&amount=${amount}`)
+      .set('Accept', 'application/json')
+      .set('Authorization', authToken)
+      .send()
+      .expect(200)
+      .end((err, res) => {
+        if (err) done(err)
+        expect(res.body).to.have.key('posts')
+        expect(res.body.posts.length).to.not.greaterThan(amount)
+        expect(res.body.posts[0]).to.have.keys(['_id', 'author', 'title'])
+        postID = res.body.posts[0]._id
+        done()
+      })
+  })
+  it('GET post api should return 200', (done) => {
+    api.get(`/api/post/${postID}`)
+      .set('Accept', 'application/json')
+      .set('Authorization', authToken)
+      .send()
+      .expect(200)
+      .end((err, res) => {
+        if (err) done(err)
+        expect(res.body).to.have.keys(['originalPost', 'replies'])
+        expect(res.body.replies).to.not.greaterThan(10)
+        expect(res.body.originalPost).to.have.keys(['_id', 'author', 'title', 'category'])
+        done()
+      })
+  })
+
+  it('POST reply api should return 200', (done) => {
+    api.post('/api/reply')
+      .set('Accept', 'application/json')
+      .set('Authorization', authToken)
+      .send({ belong: postID, content: 'testReplyContent' })
+      .expect(200)
+      .end((err, res) => {
+        if (err) done(err)
+        expect(res.body).to.have.key('msg')
+        expect(res.body.msg).to.equal('Reply created')
+        done()
+      })
+  })
+  it('POST reply api should return 400 without title', (done) => {
+    api.post('/api/reply')
+      .set('Accept', 'application/json')
+      .set('Authorization', authToken)
+      .send({ wrong: 'wrong' })
+      .expect(400)
+      .end((err, res) => {
+        if (err) done(err)
+        expect(res.body).to.have.key('status')
+        expect(res.body.status).to.equal('error')
+        expect(res.body).to.have.key('message')
+        expect(res.body.message).to.equal('Bad Request')
+        done()
+      })
+  })
+
+})
+
 const io = require('socket.io-client')
 describe('Test socket server', () => {
   let client
@@ -223,7 +340,7 @@ describe('Test socket server', () => {
     const testMsg = 'test'
     setTimeout(() => {
       client.emit('roomMessage', testMsg)
-    }, 200)//client3 join room
+    }, 200)
     client2.on('message', (data) => {
       console.log(data)
       expect(data).to.have.key('msg')
@@ -239,7 +356,7 @@ describe('Test socket server', () => {
     const testMsg = 'test'
     setTimeout(() => {
       client.emit('roomMessage', testMsg)
-    }, 200)//client3 join room
+    }, 200)
     client2.on('message', (data) => {
       console.log(data)
       expect(data).to.have.key('msg')
@@ -253,7 +370,7 @@ describe('Test socket server', () => {
     const testMsg = 'test'
     setTimeout(() => {
       client.emit('directMessage', { targetId: client2.id, message: testMsg })
-    }, 200)//client3 join room
+    }, 200)
     client2.on('message', (data) => {
       console.log(data)
       expect(data).to.have.key('msg')
