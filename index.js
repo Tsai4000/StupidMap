@@ -173,7 +173,7 @@ appAuth.post('/api/reply', async (req, res, next) => {
 
 appAuth.get('/api/posts', (req, res, next) => {
   console.log(`GET ${req.query.amount} posts, sort by ${req.query.sort}`)
-  const sortKey = req.query.sort === "created_at" ? { "created_at": 1 } : { "updated_at": 1 }
+  const sortKey = req.query.sort === "created_at" ? { "created_at": -1 } : { "updated_at": -1 }
   PostModel.aggregate([
     { $sort: sortKey },
     { $project: { _id: 1, author: 1, title: 1 } },

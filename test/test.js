@@ -3,6 +3,8 @@ const api = supertest('http://localhost:5000')
 const expect = require('expect.js')
 const UserAction = require('../actions/user')
 const GeoAction = require('../actions/geo')
+const PostAction = require('../actions/post')
+const ReplyAction = require('../actions/reply')
 let authToken
 
 const testUser = {
@@ -396,8 +398,11 @@ describe('Test socket server', () => {
 
 describe('Delete test data', () => {
   before(() => {
+    console.log('postID', postID)
     GeoAction.deleteGeoPhysically({ username: 'testUser' })
     UserAction.deleteUserPhysically(testUser)
+    ReplyAction.deleteReplyPhysically({ belong: postID })
+    PostAction.deletePostPhysically({ _id: postID })
   })
   it('Deleted', (done) => {
     // search test data should fail
